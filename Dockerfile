@@ -4,8 +4,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libpq-dev libmagic1 libgl1-mesa-glx libglib2.0-0 \
     tesseract-ocr tesseract-ocr-ben tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
-COPY backend/pyproject.toml backend/README.md ./
-RUN pip install --no-cache-dir -e "."
+COPY backend/ ./
+RUN pip install --no-cache-dir \
+    fastapi uvicorn[standard] python-multipart python-jose[cryptography] \
+    passlib[bcrypt] httpx aiofiles email-validator sqlalchemy[asyncio] \
+    asyncpg alembic neo4j redis qdrant-client opensearch-py minio \
+    sentence-transformers openai anthropic langchain langchain-openai \
+    langchain-community pymupdf python-docx pillow pytesseract \
+    pdfplumber camelot-py[cv] beautifulsoup4 lxml aio-pika celery \
+    pydantic pydantic-settings python-dateutil python-slugify orjson \
+    structlog tenacity prometheus-client sentry-sdk
 FROM python:3.12-slim-bookworm AS runtime
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
