@@ -1,0 +1,123 @@
+services:
+  - type: web
+    name: hayat-api
+    runtime: docker
+    repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hayat-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: hayat-redis
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NEO4J_URI
+        fromService:
+          type: pserv
+          name: hayat-neo4j
+          property: host
+      - key: NEO4J_PASSWORD
+        generateValue: true
+    healthCheckPath: /health
+    numInstances: 2
+    plan: standard
+    autoDeploy: true
+
+  - type: worker
+    name: hayat-worker
+    runtime: docker
+    repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
+    branch: main
+    dockerfilePath: ./backend/Dockerfile.worker
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hayat-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: hayat-redis
+          property: connectionString
+      - key: RABBITMQ_URL
+        fromService:
+          type: pserv
+          name: hayat-rabbitmq
+          property: url
+      - key: OPENAI_API_KEY
+        sync: false
+    plan: standard
+    autoDeploy: true
+
+databases:
+  - name: hayat-postgres
+    databaseName: hayat_db
+    user: hayat
+    plan: standard
+    ipAllowList: []
+
+redis:
+  - name: hayat-redis
+    plan: standard
+    ipAllowList: []
+
+privateServices:
+  - type: pserv
+    name: hayat-neo4j
+    runtime: docker
+    repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
+    branch: main
+    dockerfilePath: ./infrastructure/render/neo4j.Dockerfile
+    envVars:
+      - key: NEO4J_AUTH
+        value: neo4j/hayat_neo4j_secret
+    disk:
+      name: neo4j-data
+      mountPath: /data
+      sizeGB: 10
+    plan: standard
+
+  - type: pserv
+    name: hayat-opensearch
+    runtime: docker
+    repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
+    branch: main
+    dockerfilePath: ./infrastructure/render/opensearch.Dockerfile
+    envVars:
+      - key: discovery.type
+        value: single-node
+      - key: DISABLE_SECURITY_PLUGIN
+        value: "true"
+    disk:
+      name: opensearch-data
+      mountPath: /usr/share/opensearch/data
+      sizeGB: 20
+    plan: standard
+
+  - type: pserv
+    name: hayat-rabbitmq
+    runtime: docker
+    image:
+      imagePath: rabbitmq:3.13-management-alpine
+    envVars:
+      - key: RABBITMQ_DEFAULT_USER
+        value: hayat
+      - key: RABBITMQ_DEFAULT_PASS
+        generateValue: true
+    disk:
+      name: rabbitmq-data
+      mountPath: /var/lib/rabbitmq
+      sizeGB: 5
+    plan: starter
