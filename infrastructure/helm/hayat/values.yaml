@@ -1,0 +1,95 @@
+# HAYAT v2.0 — Helm Values
+replicaCount:
+  api: 3
+  worker: 2
+  frontend: 2
+
+image:
+  repository: ghcr.io/hayat-legal/hayat-v2
+  pullPolicy: IfNotPresent
+  tag: "v2.0.0"
+
+service:
+  api:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+  frontend:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: api.hayat.legal
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+    - host: app.hayat.legal
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+  tls:
+    - secretName: hayat-tls
+      hosts:
+        - api.hayat.legal
+        - app.hayat.legal
+
+resources:
+  api:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  worker:
+    requests:
+      memory: "4Gi"
+      cpu: "2000m"
+    limits:
+      memory: "8Gi"
+      cpu: "4000m"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector:
+  workload: general
+
+workerNodeSelector:
+  workload: workers
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "workers"
+    effect: "NoSchedule"
+
+affinity: {}
+
+config:
+  environment: production
+  logLevel: INFO
+  enableAILayer: true
+  enableKnowledgeGraph: true
+  enableRuleEngine: true
+  enableAnalytics: true
+
+secrets:
+  jwtSecretKey: ""
+  openaiApiKey: ""
+  neo4jPassword: ""
+  postgresPassword: ""

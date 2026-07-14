@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hayat-worker
+  namespace: hayat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hayat-worker
+  template:
+    metadata:
+      labels:
+        app: hayat-worker
+    spec:
+      serviceAccountName: hayat
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: worker
+          image: ghcr.io/hayat-legal/hayat-v2:latest-worker
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: hayat-config
+            - secretRef:
+                name: hayat-secrets
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "2000m"
+            limits:
+              memory: "8Gi"
+              cpu: "4000m"
