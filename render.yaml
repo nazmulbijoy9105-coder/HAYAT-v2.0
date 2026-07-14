@@ -4,8 +4,8 @@ services:
     runtime: docker
     repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
     branch: main
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -30,8 +30,8 @@ services:
       - key: NEO4J_PASSWORD
         generateValue: true
     healthCheckPath: /health
-    numInstances: 2
-    plan: standard
+    numInstances: 1
+    plan: starter
     autoDeploy: true
 
   - type: worker
@@ -39,8 +39,8 @@ services:
     runtime: docker
     repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
     branch: main
-    dockerfilePath: ./backend/Dockerfile.worker
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -58,19 +58,19 @@ services:
           property: url
       - key: OPENAI_API_KEY
         sync: false
-    plan: standard
+    plan: starter
     autoDeploy: true
 
 databases:
   - name: hayat-postgres
     databaseName: hayat_db
     user: hayat
-    plan: standard
+    plan: starter
     ipAllowList: []
 
 redis:
   - name: hayat-redis
-    plan: standard
+    plan: starter
     ipAllowList: []
 
 privateServices:
@@ -80,14 +80,15 @@ privateServices:
     repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
     branch: main
     dockerfilePath: ./infrastructure/render/neo4j.Dockerfile
+    dockerContext: .
     envVars:
       - key: NEO4J_AUTH
         value: neo4j/hayat_neo4j_secret
     disk:
       name: neo4j-data
       mountPath: /data
-      sizeGB: 10
-    plan: standard
+      sizeGB: 2
+    plan: starter
 
   - type: pserv
     name: hayat-opensearch
@@ -95,6 +96,7 @@ privateServices:
     repo: https://github.com/nazmulbijoy9105-coder/HAYAT-2
     branch: main
     dockerfilePath: ./infrastructure/render/opensearch.Dockerfile
+    dockerContext: .
     envVars:
       - key: discovery.type
         value: single-node
@@ -103,8 +105,8 @@ privateServices:
     disk:
       name: opensearch-data
       mountPath: /usr/share/opensearch/data
-      sizeGB: 20
-    plan: standard
+      sizeGB: 2
+    plan: starter
 
   - type: pserv
     name: hayat-rabbitmq
@@ -119,5 +121,5 @@ privateServices:
     disk:
       name: rabbitmq-data
       mountPath: /var/lib/rabbitmq
-      sizeGB: 5
+      sizeGB: 1
     plan: starter

@@ -1,0 +1,10 @@
+# HAYAT v2.0 — Worker Dockerfile (delegates to backend/)
+FROM hayat-v2:latest AS base
+
+USER root
+WORKDIR /app
+COPY backend/ ./
+
+FROM base AS runtime
+USER hayat
+CMD ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=info", "--concurrency=4", "-Q", "document_processing,legal_parsing,embedding_generation,ai_analysis"]
